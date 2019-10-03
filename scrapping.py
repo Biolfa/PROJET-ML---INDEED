@@ -7,11 +7,19 @@ from selenium.common.exceptions import ElementClickInterceptedException
 
 from bs4 import BeautifulSoup
 
+from pymongo import MongoClient
+
+
+client = MongoClient('localhost', 27017)
+db = client.indeed_db
+job_offers_collec = db.job_offers
+
 try:
     salary_df = pd.read_csv('salary_indeed.csv')
 except FileNotFoundError:
-    salary_df = pd.DataFrame(columns=['Id', 'Title', 'Company', 'Location', 'Salary', 'Description',
-                                    'Date', 'Job_Search', 'Department_Search'])
+    salary_df = pd.DataFrame(columns=['_id', 'Title', 'Company', 'Location',
+                                      'Salary', 'Description', 'Date',
+                                      'Job_Search', 'Department_Search'])
 
 driver = webdriver.Chrome()
 
@@ -25,6 +33,8 @@ for profession in professions:
     for dpt in departments:
         url = 'https://www.indeed.fr/jobs?q={}&l={}&sort=date'.format(profession, dpt)
         driver.get(url)
+        driver.implicitly_wait(4)
+
         first_page = True
         never_seen = True
 
@@ -37,7 +47,7 @@ for profession in professions:
                     soup = BeautifulSoup(result_html, 'lxml')
 
                     id_ = job.get_attribute('id')
-                    if id_ in salary_df.Id:
+                    if id_ in salary_df._id:
                         never_seen = False
                         break
 
@@ -73,11 +83,21 @@ for profession in professions:
                         else:
                             job_search = "Développeur"
 
-                        data = {'Id': id_, 'Title': title, 'Company': company, 'Location': location,
-                                'Salary': salary, 'Description': job_desc, 'Date': date,
-                                'Job_Search': job_search, 'Department_Search': dpt}
+                        job_offer = {'_id': id_,
+                                     'Title': title,
+                                     'Company': company,
+                                     'Location': location,
+                                     'Salary': salary,
+                                     'Description': job_desc,
+                                     'Date': date,
+                                     'Job_Search': job_search,
+                                     'Department_Search': dpt}
 
-                        salary_df = salary_df.append(data, ignore_index=True)
+                        # Insert into the pandas DataFrame
+                        salary_df = salary_df.append(job_offer,
+                                                     ignore_index=True)
+                        # Insert into the MongoDB database
+                        job_offers_collec.insert_one(job_offer)
                     else:
                         continue
 
@@ -99,5 +119,6 @@ for profession in professions:
                 # If there is a popup, close it :
                 close_popup_button = driver.find_element_by_class_name('popover-x-button-close')
                 close_popup_button.click()
+                driver.implicitly_wait(4)
 
 salary_df.to_csv('salary_indeed.csv', index=False)
