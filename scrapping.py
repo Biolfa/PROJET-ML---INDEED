@@ -48,6 +48,9 @@ for profession in professions:
 
                     id_ = job.get_attribute('id')
                     if id_ in salary_df._id:
+                        # If 'id_' is already in df, we pass to the next
+                        # department because we have sorted by date and all the
+                        # next job offers would have seen previously
                         never_seen = False
                         break
 
@@ -74,6 +77,9 @@ for profession in professions:
                     job_desc = driver.find_element_by_id('vjs-desc').text
                     title = driver.find_element_by_id('vjs-jobtitle').text
 
+                    # Check if we already have a similar job offer in the df
+                    # with the same title, company, location and description
+                    # If it is the case, we pass to the next job offer
                     if salary_df[(salary_df["Title"] == title)
                                  & (salary_df["Company"] == company)
                                  & (salary_df["Location"] == location)
