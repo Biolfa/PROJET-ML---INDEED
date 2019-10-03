@@ -1,3 +1,5 @@
+import pandas as pd
+
 from selenium import webdriver
 
 from selenium.common.exceptions import NoSuchElementException
@@ -5,27 +7,28 @@ from selenium.common.exceptions import ElementClickInterceptedException
 
 from bs4 import BeautifulSoup
 
+try:
+    salary_df = pd.read_csv('salary_indeed.csv')
+except FileNotFoundError:
+    salary_df = pd.DataFrame(columns=['Id', 'Title', 'Company', 'Location', 'Salary', 'Description',
+                                    'Date', 'Job_Search', 'Department_Search'])
 
 driver = webdriver.Chrome()
 
-ids = []
-dates = []
-job_titles = []
-locations = []
-companies = []
-salaries = []
-descriptions = []
-
 professions = ["title%3A+data", "informatique+title%3A+développeur"]
-cities = ["75", "Gironde", "Rhône", "Loire-Atlantique", "Haute-Garonne"]
+# 75 = Paris ; Gironde = Bordeaux ; Rhône = Lyon
+# Loire-Atlantique = Nantes ; Haute-Garonne = Toulouse
+# 75 à la place de Paris car ce dernier donne Montreuil par ex.
+departments = ["75", "Gironde", "Rhône", "Loire-Atlantique", "Haute-Garonne"]
 
 for profession in professions:
-    for city in cities:
-        url = 'https://www.indeed.fr/jobs?q={}&l={}&sort=date'.format(profession, city)
+    for dpt in departments:
+        url = 'https://www.indeed.fr/jobs?q={}&l={}&sort=date'.format(profession, dpt)
         driver.get(url)
-        page = 1
+        first_page = True
+        never_seen = True
 
-        while True:
+        while never_seen:
             try:
                 all_jobs = driver.find_elements_by_class_name('result')
 
@@ -34,6 +37,9 @@ for profession in professions:
                     soup = BeautifulSoup(result_html, 'lxml')
 
                     id_ = job.get_attribute('id')
+                    if id_ in salary_df.Id:
+                        never_seen = False
+                        break
 
                     date = soup.find(class_="date")
                     if date is not None:
@@ -58,20 +64,28 @@ for profession in professions:
                     job_desc = driver.find_element_by_id('vjs-desc').text
                     title = driver.find_element_by_id('vjs-jobtitle').text
 
-                    if id_ not in ids:
-                        ids.append(id_)
-                        dates.append(date)
-                        job_titles.append(title)
-                        locations.append(location)
-                        companies.append(company)
-                        salaries.append(salary)
-                        descriptions.append(job_desc)
+                    if salary_df[(salary_df["Title"] == title)
+                                 & (salary_df["Company"] == company)
+                                 & (salary_df["Location"] == location)
+                                 & (salary_df["Description"] == job_desc)].empty:
+                        if profession == 'title%3A+data':
+                            job_search = "Data"
+                        else:
+                            job_search = "Développeur"
+
+                        data = {'Id': id_, 'Title': title, 'Company': company, 'Location': location,
+                                'Salary': salary, 'Description': job_desc, 'Date': date,
+                                'Job_Search': job_search, 'Department_Search': dpt}
+
+                        salary_df = salary_df.append(data, ignore_index=True)
+                    else:
+                        continue
 
                 # Click on the "Suivant" button :
                 try:
-                    if page == 1:
+                    if first_page:
                         driver.find_element_by_class_name('np').click()
-                        page = 0
+                        first_page = False
                     else:
                         try:
                             driver.find_elements_by_class_name('np')[1].click()
@@ -85,3 +99,5 @@ for profession in professions:
                 # If there is a popup, close it :
                 close_popup_button = driver.find_element_by_class_name('popover-x-button-close')
                 close_popup_button.click()
+
+salary_df.to_csv('salary_indeed.csv', index=False)
