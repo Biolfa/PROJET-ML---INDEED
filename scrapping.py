@@ -178,3 +178,5 @@ for profession in professions:
                 driver.implicitly_wait(4)
 
 salary_df.to_csv('salary_indeed.csv', index=False)
+
+driver.quit()
