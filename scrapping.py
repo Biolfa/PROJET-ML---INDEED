@@ -1,3 +1,6 @@
+import datetime
+import re
+
 import pandas as pd
 
 from selenium import webdriver
@@ -57,25 +60,46 @@ for profession in professions:
                     date = soup.find(class_="date")
                     if date is not None:
                         date = date.text
+                        if any(word in date.lower()
+                                for word in ["instant", "seconde", "minute",
+                                             "heure", "aujourd'hui"]):
+                            date = datetime.date.today()
+                        else:
+                            number = int(re.findall(r'\d+', date)[0])
+                            if "jour" in date:
+                                date = (datetime.date.today()
+                                        - datetime.timedelta(days=number))
+                            elif "mois" in date:
+                                # 1 month ~ 4.35 weeks
+                                # ==> x months ~ 4.35 * x weeks
+                                date = (datetime.date.today()
+                                        - datetime.timedelta(weeks=4.35*number))
+
+                        try:
+                            date = date.strftime(r"%d/%m/%Y")
+                        except AttributeError:
+                            pass
 
                     location = soup.find(class_="location")
                     if location is not None:
-                        location = location.text
+                        location = location.text.replace("\n", "").strip()
 
                     company = soup.find(class_="company")
                     if company is not None:
-                        company = company.text
+                        company = company.text.replace("\n", "").strip()
 
                     salary = soup.find(class_="salary")
                     if salary is not None:
-                        salary = salary.text
+                        salary = salary.text.replace("\n", "").strip()
 
                     sum_div = job.find_element_by_class_name("summary")
                     sum_div.click()
                     driver.implicitly_wait(4)
 
-                    job_desc = driver.find_element_by_id('vjs-desc').text
-                    title = driver.find_element_by_id('vjs-jobtitle').text
+                    job_desc = driver.find_element_by_id('vjs-desc')\
+                        .text.replace("\n", " ").strip()
+                    title = driver.find_element_by_id('vjs-jobtitle')\
+                        .text.replace("\n", " ").strip()
 
                     # Check if we already have a similar job offer in the df
                     # with the same title, company, location and description
@@ -123,7 +147,8 @@ for profession in professions:
 
             except ElementClickInterceptedException:
                 # If there is a popup, close it :
-                close_popup_button = driver.find_element_by_class_name('popover-x-button-close')
+                close_popup_button = driver.find_element_by_class_name(
+                                                'popover-x-button-close')
                 close_popup_button.click()
                 driver.implicitly_wait(4)
 
