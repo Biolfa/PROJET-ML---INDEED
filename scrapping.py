@@ -91,6 +91,27 @@ for profession in professions:
                     salary = soup.find(class_="salary")
                     if salary is not None:
                         salary = salary.text.replace("\n", "").strip()
+                        if "-" in salary:
+                            split = salary.split("-")
+                            salary_min = split[0]
+                            salary_max = split[1]
+                        else:
+                            salary_min = salary
+                            salary_max = salary
+
+                        salary_min = salary_min.replace("€", "")\
+                                               .replace("par mois", "")\
+                                               .replace("par an", "")\
+                                               .replace("\xa0", "")
+
+                        salary_max = salary_max.replace("€", "")\
+                                               .replace("par mois", "")\
+                                               .replace("par an", "")\
+                                               .replace("\xa0", "")
+
+                        if "mois" in salary:
+                            salary_min = int(salary_min) * 12
+                            salary_max = int(salary_max) * 12
 
                     sum_div = job.find_element_by_class_name("summary")
                     sum_div.click()
@@ -127,7 +148,7 @@ for profession in professions:
                         salary_df = salary_df.append(job_offer,
                                                      ignore_index=True)
                         # Insert into the MongoDB database
-                        job_offers_collec.insert_one(job_offer)
+                        job_offers_collec.update_one(job_offer, upsert=True)
                     else:
                         continue
 
