@@ -1,0 +1,201 @@
+import pandas as pd
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import ElementClickInterceptedException
+from bs4 import BeautifulSoup
+import re
+
+
+
+
+def salary_dataset():
+    #check if dataset exist, else : create it
+    try:
+        salary_df = pd.read_csv('salary_indeed.csv')
+    except FileNotFoundError:
+        salary_df = pd.DataFrame(columns=['Id', 'Title', 'Company', 'Location', 'Salary','Salary min', 'Salary max', 'Description',
+                                        'Date', 'Job_Search', 'Department_Search'])
+    driver = webdriver.Chrome()
+    
+    #repérer la liste des objects selenium des professions par titres et départements
+    #professions = ["title%3A+data", "informatique+title%3A+développeur"]
+    professions = ["title%3A+data+scientist"]
+    # 75 = Paris ; Gironde = Bordeaux ; Rhône = Lyon, Loire-Atlantique = Nantes ; Haute-Garonne = Toulouse
+    # 75 à la place de Paris car ce dernier donne Montreuil par ex.
+    #departments = ["75", "Gironde", "Rhône", "Loire-Atlantique", "Haute-Garonne"]
+    departments = ["Bordeaux"]
+    
+    # start over
+    for profession in professions:
+        for dpt in departments:
+            url = 'https://www.indeed.fr/jobs?q={}&l={}&sort=date'.format(profession, dpt)
+            driver.get(url)
+            first_page = True
+            never_seen = True
+    
+            while never_seen:
+                try:
+                    all_jobs = driver.find_elements_by_class_name('result')
+    
+                    for job in all_jobs:
+                        result_html = job.get_attribute('innerHTML')
+                        soup = BeautifulSoup(result_html, 'lxml')
+    
+                        id_ = job.get_attribute('id')
+                        if id_ in salary_df.Id:
+                            never_seen = False
+                            break
+    
+             # date = soup.find(class_="date")
+             # if date is not None:
+             #     date = date.text
+    
+             # location = soup.find(class_="location")
+             # if location is not None:
+             #     location = location.text
+    
+             # company = soup.find(class_="company")
+             # if company is not None:
+             #     company = company.text
+                
+    
+                        date  = soup.find(class_="date")
+                        if date is not None : 
+                            date = date.text.replace("\n","").strip()                            
+                            
+                        title = soup.find("a", class_="jobtitle")
+                        if title is not None:
+                            title = title.text.replace('\n', '')
+    
+                        location = soup.find(class_="location")
+                        if location is not None:
+                            location = location.text.replace("\n", "").strip()
+    
+                        company = soup.find(class_="company")
+                        if company is not None:
+                            company = company.text.replace("\n", "").strip()
+    
+                        salary = soup.find(class_="salary")
+                        if salary is not None:
+                            salary = salary.text.replace("\n", "").strip()
+                            
+                        sum_div = job.find_element_by_class_name("summary")
+                        sum_div.click()
+                        driver.implicitly_wait(4)
+    
+                        job_desc = driver.find_element_by_id('vjs-desc').text
+                        title = driver.find_element_by_id('vjs-jobtitle').text
+
+
+                
+                        #Add min-max columns for salary or use Regex to find salary in description 
+                
+                       #if salary == 'None':
+                       #
+                       #    # Use Regex to see if there is the salary in the description and not in the salary box
+                       #    
+                       #    regex_salary = re.findall('\d+ \d+[€]|\d+k€|\d+[.]\d+k€|\d+[.]\d+K€|\d+K€|\d+ \d+[.]\d+[€]|\d+[,]\d+[.]\d+[€]|\d+[,]\d+[€]|\d+€|\d+ \d+[,]\d+[€]', job_desc)
+                       #    
+                       #    if regex_salary != []:
+                       #        if len(regex_salary) > 1 :
+                       #            if 'k' in regex_salary[0] or 'k' in regex_salary[1]:
+                       #                regex_salary_min = int(regex_salary[0].replace("k", "").replace("€","").replace("\xa0","").replace(" ",""))
+                       #                regex_salary_max = int(regex_salary[1].replace("k", "").replace("€","").replace("\xa0","").replace(" ",""))
+                       #                salary_min = regex_salary_min * 1000
+                       #                salary_max = regex_salary_max * 1000
+                       #            else:
+                       #                regex_salary_min = int(regex_salary[0].replace("€","").replace("\xa0","").replace(" ",""))
+                       #                regex_salary_max = int(regex_salary[1].replace("€","").replace("\xa0","").replace(" ",""))
+                       #                salary_min = regex_salary_min
+                       #                salary_max = regex_salary_max
+                       #                if salary_min < 150 and salary_max < 150:
+                       #                    salary_min = salary_min * 35 * 4 * 12
+                       #                    salary_max = salary_max * 35 * 4 * 12
+                       #                elif salary_min < 2000 and salary_min > 500 and salary_max < 2000 and salary_max > 500:
+                       #                    salary_min = salary_min * 12
+                       #                    salary_max = salary_max * 12
+                       #                    
+                       #        else:
+                       #            
+                       #            if 'k' in regex_salary[0] :
+                       #                regex_salary = int(regex_salary[0].replace("k", "").replace("€","").replace("\xa0","").replace(" ",""))
+                       #                salary_min = regex_salary * 1000
+                       #                salary_max = regex_salary * 1000
+                       #            else:
+                       #                regex_salary = int(regex_salary[0].replace("€","").replace("\xa0","").replace(" ",""))
+                       #                salary_min = regex_salary
+                       #                salary_max = regex_salary
+                       #                if salary_min < 150 and salary_max < 150:
+                       #                    salary_min = salary_min * 35 * 4 * 12
+                       #                    salary_max = salary_max * 35 * 4 * 12
+                       #                elif salary_min < 2000 and salary_min > 500 and salary_max < 2000 and salary_max > 500:
+                       #                    salary_min = salary_min * 12
+                       #                    salary_max = salary_max * 12
+                        if "-" in salary:
+                            split = salary.split("-")
+                            salary_min = split[0]
+                            salary_max = split[1]
+                        else:
+                            salary_min = salary
+                            salary_max = salary
+
+                            salary_min = salary_min.replace("€","").replace("par mois","").replace("par an","").replace("\xa0","")
+                            salary_max = salary_max.replace("€","").replace("par mois","").replace("par an","").replace("\xa0","")
+
+                        if "mois" in salary:
+                            salary_min = int(salary_min)*12
+                            salary_max = int(salary_max)*12
+
+                        else:
+                           
+                               salary = 'None'
+                        
+                            
+                            
+                        if salary_df[(salary_df["Title"] == title)
+                                     & (salary_df["Company"] == company)
+                                     & (salary_df["Location"] == location)
+                                     & (salary_df["Description"] == job_desc)].empty:
+                            if profession == 'title%3A+data':
+                                job_search = "Data"
+                            else:
+                                job_search = "Développeur"
+    
+                            job_offer = {'Id': id_, 
+                                         'Title': title, 
+                                         'Company': company, 
+                                         'Location': location,
+                                         'Salary': salary,
+                                         'Salary min' : salary_min,
+                                         'Salary max' : salary_max,  
+                                         'Description': job_desc, 
+                                         'Date': date,
+                                         'Job_Search': job_search, 
+                                         'Department_Search': dpt}
+    
+                            salary_df = salary_df.append(job_offer, ignore_index=True)
+                        else:
+                            continue
+    
+                    # Click on the "Suivant" button :
+                    try:
+                        if first_page:
+                            driver.find_element_by_class_name('np').click()
+                            first_page = False
+                        else:
+                            try:
+                                driver.find_elements_by_class_name('np')[1].click()
+                            except IndexError:
+                                # Last page, no "Suivant" button
+                                break
+                    except NoSuchElementException:
+                        break
+    
+                except ElementClickInterceptedException:
+                    # If there is a popup, close it :
+                    close_popup_button = driver.find_element_by_class_name('popover-x-button-close')
+                    close_popup_button.click()
+    
+    salary_df.to_csv('salary_indeed.csv', index=False)
+    
+    
