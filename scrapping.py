@@ -11,6 +11,7 @@ from selenium.common.exceptions import ElementClickInterceptedException
 from bs4 import BeautifulSoup
 
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 
 
 client = MongoClient('localhost', 27017)
@@ -50,12 +51,6 @@ for profession in professions:
                     soup = BeautifulSoup(result_html, 'lxml')
 
                     id_ = job.get_attribute('id')
-                    if id_ in salary_df._id:
-                        # If 'id_' is already in df, we pass to the next
-                        # department because we have sorted by date and all the
-                        # next job offers would have seen previously
-                        never_seen = False
-                        break
 
                     date = soup.find(class_="date")
                     if date is not None:
@@ -138,17 +133,26 @@ for profession in professions:
                                      'Title': title,
                                      'Company': company,
                                      'Location': location,
-                                     'Salary': salary,
+                                     'Salary Min': salary_min,
+                                     'Salary Max': salary_max,
                                      'Description': job_desc,
                                      'Date': date,
                                      'Job_Search': job_search,
                                      'Department_Search': dpt}
 
+                        try:
+                            # Insert into the MongoDB database
+                            job_offers_collec.insert_one(job_offer)
+                        except DuplicateKeyError:
+                            # If 'id_' is already in DB, we pass to the next
+                            # department because we have sorted by date and all
+                            # the next job offers would have seen previously
+                            never_seen = False
+                            break
+
                         # Insert into the pandas DataFrame
                         salary_df = salary_df.append(job_offer,
                                                      ignore_index=True)
-                        # Insert into the MongoDB database
-                        job_offers_collec.update_one(job_offer, upsert=True)
                     else:
                         continue
 
