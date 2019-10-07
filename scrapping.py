@@ -40,9 +40,8 @@ for profession in professions:
         driver.implicitly_wait(4)
 
         first_page = True
-        never_seen = True
 
-        while never_seen:
+        while True:
             try:
                 all_jobs = driver.find_elements_by_class_name('result')
 
@@ -122,11 +121,7 @@ for profession in professions:
                             # Insert into the MongoDB database
                             job_offers_collec.insert_one(job_offer)
                         except DuplicateKeyError:
-                            # If 'id_' is already in DB, we pass to the next
-                            # department because we have sorted by date and all
-                            # the next job offers would have seen previously
-                            never_seen = False
-                            break
+                            continue
 
                         # Insert into the pandas DataFrame
                         salary_df = salary_df.append(job_offer,
