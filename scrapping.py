@@ -27,7 +27,8 @@ except FileNotFoundError:
 
 driver = webdriver.Chrome()
 
-professions = ["title%3A+data", "informatique+title%3A+développeur"]
+professions = ["title%3A+data+scientist", "title%3A+data+analyst", "title%3A+data+architect",
+               "title%3A+data+engineer", "informatique+title%3A+développeur", "title%3A+devops"]
 # 75 = Paris ; Gironde = Bordeaux ; Rhône = Lyon
 # Loire-Atlantique = Nantes ; Haute-Garonne = Toulouse
 # 75 à la place de Paris car ce dernier donne Montreuil par ex.
