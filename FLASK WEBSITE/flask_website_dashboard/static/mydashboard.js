@@ -1,4 +1,3 @@
-  
 // contient les articles de presse, qui doivent être 
 // gardés en mémoire même après affichage du graphique
 var news_data;

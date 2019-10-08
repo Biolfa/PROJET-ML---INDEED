@@ -32,14 +32,54 @@ app.config.from_object('config')
 from flask import Flask, render_template
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return render_template('home.html')
-
-@app.route('/indeed')
-def dashboard():
-    return render_template('etude_indeed.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+'''
+
+@app.route('/error')
+def error():
+    return render_template('404.html')
+
+@app.route('/blank')
+def blank():
+    return render_template('blank.html')
+
+@app.route('/charts)
+def charts():
+    return render_template('charts.html')
+
+@app.route('/password')
+def password():
+    return render_template('forgot-password.html')
+
+@app.route('/login')
+def index():
+    return render_template('index.html')
+
+@app.route('/')
+def login():
+    return render_template('login.html')
+
+@app.route('/readme')
+def readme():
+    return render_template('readme.html')
+
+@app.route('/register')
+def register():
+    return render_template('register.html')
+
+@app.route('/result')
+def result():
+    return render_template('result.html')
+
+@app.route('/tables')
+def tables():
+    return render_template('tables.html')
+
+'''
+
+
+
 
