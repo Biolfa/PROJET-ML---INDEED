@@ -15,6 +15,13 @@ from pymongo.errors import DuplicateKeyError
 
 
 client = MongoClient('localhost', 27017)
+
+dbnames = client.list_database_names()
+if "indeed_db" in dbnames:
+    update = True
+else:
+    update = False
+
 db = client.indeed_db
 job_offers_collec = db.job_offers
 
@@ -27,8 +34,10 @@ except FileNotFoundError:
 
 driver = webdriver.Chrome()
 
-professions = ["title%3A+data+scientist", "title%3A+data+analyst", "title%3A+data+architect",
-               "title%3A+data+engineer", "informatique+title%3A+développeur", "title%3A+devops"]
+professions = ["title%3A+data+scientist", "title%3A+data+analyst",
+               "title%3A+data+architect", "title%3A+data+engineer",
+               "informatique+title%3A+développeur", "title%3A+devops",
+               "title%3A+software+engineer"]
 # 75 = Paris ; Gironde = Bordeaux ; Rhône = Lyon
 # Loire-Atlantique = Nantes ; Haute-Garonne = Toulouse
 # 75 à la place de Paris car ce dernier donne Montreuil par ex.
@@ -36,7 +45,13 @@ departments = ["75", "Gironde", "Rhône", "Loire-Atlantique", "Haute-Garonne"]
 
 for profession in professions:
     for dpt in departments:
-        url = 'https://www.indeed.fr/jobs?q={}&l={}&sort=date'.format(profession, dpt)
+        if update:
+            # Add &fromage=x at the end of the url to look for the last x days
+            url = 'https://www.indeed.fr/jobs?q={}&l={}&sort=date&fromage=7'\
+                    .format(profession, dpt)
+        else:
+            url = 'https://www.indeed.fr/jobs?q={}&l={}&sort=date'\
+                    .format(profession, dpt)
         driver.get(url)
         driver.implicitly_wait(4)
 
