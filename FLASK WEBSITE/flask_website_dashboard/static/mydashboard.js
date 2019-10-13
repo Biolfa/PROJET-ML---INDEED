@@ -54,7 +54,7 @@ function display_wordcloud(news_data) {
             },
         }],
         title: {
-            text: 'Actualité : nuage de mots'
+            text: 'Métiers de la data : nuage de mots'
         },
         chart: {
             backgroundColor: 'None'
