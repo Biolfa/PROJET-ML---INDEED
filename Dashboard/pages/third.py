@@ -53,9 +53,10 @@ layout = html.Div([
                         dbc.RadioItems(
                             id="range_status_selector",
                             options=[
-                                {"label": "20 - 40", "value": 1},
-                                {"label": "40 - 48", "value": 2},
-                                {"label": "48 - 100", "value": 3},
+                                {"label": "20 - 36", "value": 1},
+                                {"label": "37 - 45", "value": 4},
+                                {"label": "47 - 57", "value": 2},
+                                {"label": "60 - 90", "value": 3},
                             ],
                             inline=True,
                         ),
@@ -218,6 +219,11 @@ layout = html.Div([
         className="row mt-5 flex-display",
         ),
 
+    html.Div([
+        html.H1(''),
+        ],
+        className='row'
+        ),
 
 ########## FIN du HTML ##########
 

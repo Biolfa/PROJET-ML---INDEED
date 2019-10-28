@@ -15,7 +15,11 @@ app.layout = html.Div([
             html.Nav([
 
                 html.Div([
-                    html.H2('Yes ! Indeed')
+                    html.A([
+                        html.H2('Yes ! Indeed')
+                    ],
+                    href='/',
+                    ),  
                 ],
                 className='navbar-brand',
                 ),
@@ -34,7 +38,7 @@ app.layout = html.Div([
 
                             html.Li([
                                 html.A([
-                                    html.H5('Metiers et Entreprises'),
+                                    html.H5('Métiers et Entreprises'),
                                 ],
                                 href='/jobs-and-location',
                                 ),
